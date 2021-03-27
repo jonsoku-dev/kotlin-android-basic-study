@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
+import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
@@ -13,25 +14,34 @@ import android.widget.ArrayAdapter
 import android.widget.BaseAdapter
 import android.widget.Toast
 import androidx.core.view.isGone
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import com.example.study.todo.Todo
+import com.example.study.todo.TodoViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.row.view.*
 
 class MainActivity : AppCompatActivity() {
-
-    // array
-    val data = mutableListOf<String>()
-
-    // data[0] , data[1], ...
+    private lateinit var mTodoViewModel: TodoViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        mTodoViewModel = ViewModelProvider(this).get(TodoViewModel::class.java)
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         button.isEnabled = false
 
         button.setOnClickListener {
-            if (editText.text.toString().isNotEmpty()) {
-                data.add(editText.text.toString())
+            val content = editText.text.toString()
+
+            if (TextUtils.isEmpty(content)) {
+                Toast.makeText(this, "할일을 입력해주세요.", Toast.LENGTH_SHORT).show()
+            } else {
+                val todo = Todo(0, content, false)
+
+                mTodoViewModel.addTodo(todo)
 
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(editText.windowToken, 0)
@@ -45,18 +55,29 @@ class MainActivity : AppCompatActivity() {
 
         editText.addTextChangedListener(editTextWatcher)
 
+        mTodoViewModel.readTodos.observe(this, Observer { todos ->
+            customAdapter.setData(todos)
+        })
+
         list.adapter = customAdapter
     }
 
 
     // custom adapter
-    val customAdapter = object : BaseAdapter() {
+    private val customAdapter = object : BaseAdapter() {
+        private var todoList = emptyList<Todo>()
+
+        fun setData(todos: List<Todo>) {
+            this.todoList = todos
+            notifyDataSetChanged()
+        }
+
         override fun getCount(): Int {
-            return data.size
+            return todoList.size
         }
 
         override fun getItem(position: Int): Any {
-            return data[position]
+            return todoList[position]
         }
 
         override fun getItemId(position: Int): Long {
@@ -71,7 +92,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             newRowView?.run {
-                editTextView.text = data[position]
+                editTextView.text = todoList[position].content
 
                 // 버튼에 index 부여
                 editTextEditButton.tag = position
@@ -84,26 +105,25 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 editTextDeleteButton.setOnClickListener {
-                    selectedItem.text = "$position 번째 delete 버튼이 눌렸습니다."
-                    data.removeAt(position)
-                    notifyDataSetChanged()
+                    val deleteId = todoList[position].id
+                    mTodoViewModel.deleteTodoById(deleteId)
                     Toast.makeText(applicationContext, "삭제되었습니다.", Toast.LENGTH_SHORT).show()
                 }
 
                 editModeSubmitButton.setOnClickListener {
                     // init data
-                    editModeTextView.setText(data[position])
+//                    editModeTextView.setText(data[position])
 
                     if (editModeTextView.text.toString().isNotEmpty()) {
-                        // save edited data
-                        data[position] = editModeTextView.text.toString()
-                        notifyDataSetChanged()
-
-                        val imm =
-                            getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                        imm.hideSoftInputFromWindow(editModeTextView.windowToken, 0)
-
-                        editModeTextView.clearFocus()
+//                        // save edited data
+//                        data[position] = editModeTextView.text.toString()
+//                        notifyDataSetChanged()
+//
+//                        val imm =
+//                            getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+//                        imm.hideSoftInputFromWindow(editModeTextView.windowToken, 0)
+//
+//                        editModeTextView.clearFocus()
 
                         Toast.makeText(applicationContext, "수정되었습니다.", Toast.LENGTH_SHORT).show()
 
