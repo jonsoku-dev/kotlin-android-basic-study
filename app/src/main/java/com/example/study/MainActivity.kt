@@ -4,19 +4,24 @@ import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
+import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.BaseAdapter
-import android.widget.Toast
+import android.widget.*
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.view.isGone
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.RecyclerView
+import com.example.study.data.User
+import com.example.study.data.UserViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.row.view.*
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var mUserViewModel: UserViewModel
 
     // array
     val data = mutableListOf<String>()
@@ -27,11 +32,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        mUserViewModel = ViewModelProvider(this).get(UserViewModel::class.java)
+
+
         button.isEnabled = false
 
         button.setOnClickListener {
             if (editText.text.toString().isNotEmpty()) {
-                data.add(editText.text.toString())
+//                data.add(editText.text.toString())
+
+                // DB
+                insertDataToDatabase()
 
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(editText.windowToken, 0)
@@ -46,17 +57,29 @@ class MainActivity : AppCompatActivity() {
         editText.addTextChangedListener(editTextWatcher)
 
         list.adapter = customAdapter
+
+        mUserViewModel.readAllData.observe(this, Observer { user ->
+            customAdapter.setData(user)
+        })
     }
 
 
     // custom adapter
-    val customAdapter = object : BaseAdapter() {
+    private val customAdapter = object : BaseAdapter() {
+
+        private var userList = emptyList<User>()
+
+        fun setData(user: List<User>){
+            this.userList = user
+            notifyDataSetChanged()
+        }
+
         override fun getCount(): Int {
-            return data.size
+            return userList.size
         }
 
         override fun getItem(position: Int): Any {
-            return data[position]
+            return userList[position]
         }
 
         override fun getItemId(position: Int): Long {
@@ -71,7 +94,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             newRowView?.run {
-                editTextView.text = data[position]
+                editTextView.text = userList[position].firstName
 
                 // 버튼에 index 부여
                 editTextEditButton.tag = position
@@ -135,5 +158,23 @@ class MainActivity : AppCompatActivity() {
         // 변경 된 문자열이 화면에 반영 되었을
         override fun afterTextChanged(s: Editable?) {
         }
+    }
+
+    private fun insertDataToDatabase(): Boolean {
+        val firstName = "1234"
+        val lastName = "test"
+        val age = 10
+        return if (inputCheck(firstName)) {
+            // Create User object
+            val user = User(0, firstName, lastName, Integer.parseInt(age.toString()))
+            mUserViewModel.addUser(user)
+            true
+        } else {
+            false
+        }
+    }
+
+    private fun inputCheck(firstName: String): Boolean {
+        return !(TextUtils.isEmpty(firstName))
     }
 }
