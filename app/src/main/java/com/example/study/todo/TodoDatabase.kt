@@ -1,19 +1,19 @@
-package com.example.study.data
+package com.example.study.todo
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [User::class], version = 1, exportSchema = false)
-abstract class UserDatabase : RoomDatabase() {
-    abstract fun userDao(): UserDao
+@Database(entities = [Todo::class], version = 1, exportSchema = false)
+abstract class TodoDatabase : RoomDatabase() {
+    abstract fun todoDao(): TodoDao
 
     companion object {
         @Volatile
-        private var INSTANCE: UserDatabase? = null
+        private var INSTANCE: TodoDatabase? = null
 
-        fun getDatabase(context: Context): UserDatabase {
+        fun getDatabase(context: Context): TodoDatabase {
             val tempInstance = INSTANCE
             if (tempInstance != null) {
                 return tempInstance
@@ -21,8 +21,8 @@ abstract class UserDatabase : RoomDatabase() {
             synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    UserDatabase::class.java,
-                    "user_database"
+                    TodoDatabase::class.java,
+                    "todo_database"
                 ).build()
                 INSTANCE = instance
                 return instance

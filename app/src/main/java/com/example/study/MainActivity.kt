@@ -10,18 +10,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.view.isGone
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.RecyclerView
-import com.example.study.data.User
-import com.example.study.data.UserViewModel
+import com.example.study.todo.Todo
+import com.example.study.todo.TodoViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.row.view.*
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var mUserViewModel: UserViewModel
+    private lateinit var mTodoViewModel: TodoViewModel
 
     // array
     val data = mutableListOf<String>()
@@ -32,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        mUserViewModel = ViewModelProvider(this).get(UserViewModel::class.java)
+        mTodoViewModel = ViewModelProvider(this).get(TodoViewModel::class.java)
 
 
         button.isEnabled = false
@@ -58,8 +56,8 @@ class MainActivity : AppCompatActivity() {
 
         list.adapter = customAdapter
 
-        mUserViewModel.readAllData.observe(this, Observer { user ->
-            customAdapter.setData(user)
+        mTodoViewModel.readAllData.observe(this, Observer { todo ->
+            customAdapter.setData(todo)
         })
     }
 
@@ -67,19 +65,19 @@ class MainActivity : AppCompatActivity() {
     // custom adapter
     private val customAdapter = object : BaseAdapter() {
 
-        private var userList = emptyList<User>()
+        private var todoList = emptyList<Todo>()
 
-        fun setData(user: List<User>){
-            this.userList = user
+        fun setData(user: List<Todo>){
+            this.todoList = user
             notifyDataSetChanged()
         }
 
         override fun getCount(): Int {
-            return userList.size
+            return todoList.size
         }
 
         override fun getItem(position: Int): Any {
-            return userList[position]
+            return todoList[position]
         }
 
         override fun getItemId(position: Int): Long {
@@ -94,7 +92,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             newRowView?.run {
-                editTextView.text = userList[position].firstName
+                editTextView.text = todoList[position].content
 
                 // 버튼에 index 부여
                 editTextEditButton.tag = position
@@ -161,20 +159,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun insertDataToDatabase(): Boolean {
-        val firstName = "1234"
-        val lastName = "test"
-        val age = 10
-        return if (inputCheck(firstName)) {
-            // Create User object
-            val user = User(0, firstName, lastName, Integer.parseInt(age.toString()))
-            mUserViewModel.addUser(user)
+        val content = editText.text.toString()
+        return if (inputCheck(content)) {
+            val todo = Todo(0, content, false)
+            mTodoViewModel.addTodo(todo)
             true
         } else {
             false
         }
     }
 
-    private fun inputCheck(firstName: String): Boolean {
-        return !(TextUtils.isEmpty(firstName))
+    private fun inputCheck(content: String): Boolean {
+        return !(TextUtils.isEmpty(content))
     }
 }
